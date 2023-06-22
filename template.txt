@@ -1,0 +1,68 @@
+<template>
+        <template if:true={leaveRecords}>
+            <lightning-card title="Employee Leave History">
+                <div class="slds-grid slds-gutters">
+                    <div class="slds-col">
+                    Leaves Used So Far : {usedLeaves} 
+                    </div>
+                    <div class="slds-col">
+                      Leaves Remaining: {leaveBalance}
+                      </div>
+                </div>
+            </lightning-card>
+        <lightning-datatable 
+            key-field="Id"
+            data={leaveRecords}
+            columns={columns}
+            hide-checkbox-column="true">
+        </lightning-datatable>
+    </template> 
+</template>
+
+
+ 
+  import { LightningElement, wire,api } from 'lwc';
+   import getLeaveRecords from '@salesforce/apex/LeaveController.getLeaveRecords';
+   import getEmployeeLeaveInfo from '@salesforce/apex/EmployeeController.getEmployeeLeaveInfo';
+   
+   const columns = columns =  [
+      { label: 'Leave Start Date', fieldName: 'Start_Date__c', type: 'date' },
+      { label: 'Leave End Date', fieldName: 'End_Date__c', type: 'date' },
+      { label: 'Leave Type', fieldName: 'Leave_Type__c', type: 'text' },
+      { label: 'Number of Days', fieldName: 'No_of_Days__c', type: 'formula' },
+      { label: 'Status', fieldName: 'Status__c', type: 'text' }
+  ];
+   export default class LeaveHistory extends LightningElement {
+    usedLeaves;
+    leaveBalance;
+    leaveRecords;
+    error;
+  
+      columns = columns;
+       
+       @wire(getLeaveRecords)
+       wiredLeaveRecords({ data, error }) {
+           if (data)
+            {
+               this.leaveRecords = data;
+            } 
+           else if (error) 
+           {
+               console.error('Error retrieving leave info:', error);
+           }
+       }
+
+       @wire(getEmployeeLeaveInfo,{employeeid:'$recordId'})
+       employeeLeaveInfo({ error, data })
+        {
+         if (data)
+         {
+            this.usedLeaves = data.Used_Leaves__c;
+            this.leaveBalance = data.Leave_Balance__c;
+         }
+         else if (error) 
+         {
+            console.error('Error retrieving employee leave info:', error);
+         }
+        }
+}
